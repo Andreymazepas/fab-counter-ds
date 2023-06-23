@@ -1,0 +1,10 @@
+{
+  "files.associations": {
+    ".stylelintrc": "json",
+    ".prettierrc": "json",
+    "*.tsx": "typescriptreact",
+    ".env.*": "dotenv",
+    "stdio.h": "c",
+    "nds.h": "c"
+  }
+}
