@@ -8,7 +8,21 @@
 
 int player1Life;
 int player2Life;
+int player1Temp;
+int player2Temp;
 int isTouch = 0;
+int timer = 0;
+int touchTimer = 0;
+
+int bg1 = 0;
+int bg2 = 0;
+// map id to bg
+// 0 - fai
+// 1 - oldhin
+// 2 - rhinar
+char *bgMap[3] = {"fai", "oldhin", "rhinar"};
+int maxHeroesId = 2;
+
 
 void updateLife(int player, int change);
 void displayLifeTotals();
@@ -47,6 +61,11 @@ int main(int argc, char **argv) {
 }
 
 void updateLife(int player, int change) {
+    
+    // if(timer > 0 && timer < 60 * 3) {
+    //     timer = 0;
+    //     return;
+    // }
     // Update the life total for the specified player
     if (player == 1) {
         player1Life += change;
@@ -167,9 +186,24 @@ void handleUserInput() {
         player1Life = 20;
         player2Life = 20;
     }
+    // holding button for 2 seconds updateLife by 5
+    if (keysHeld() & KEY_UP) {
+        // flash buttons sprite 0
+        NF_SpriteSetPalColor(1, 1, 32, 31, 31, 31);
 
-    if (keysDown() & KEY_UP) {
-        updateLife(1, 1);
+        timer++;
+        if(timer == 60 * 1) {
+            updateLife(1, 5);
+        }
+    }
+    if (keysUp() & KEY_UP) {
+        // unflash buttons sprite 0
+        NF_SpriteUpdatePalette(1, 1);
+        if(timer < 60 * 1) {
+            updateLife(1, 1);
+        }
+        
+        timer = 0;
     }
     if (keysDown() & KEY_DOWN) {
         updateLife(1, -1);
@@ -179,6 +213,27 @@ void handleUserInput() {
     }
     if (keysDown() & KEY_B) {
         updateLife(2, -1);
+    }
+
+    if(keysDown() & KEY_L) {
+        if(bg1 == maxHeroesId) {
+            bg1 = 0;
+        } else {
+            bg1++;
+        }
+
+        NF_CreateTiledBg(0, 3, bgMap[bg1]);
+        NF_ScrollBg(0, 3, 128, 0);
+    }
+
+    if(keysDown() & KEY_R) {
+        if(bg2 == maxHeroesId) {
+            bg2 = 0;
+        } else {
+            bg2++;
+        }
+
+        NF_CreateTiledBg(0, 2, bgMap[bg2]);
     }
 
 
@@ -191,7 +246,11 @@ void displayBg() {
     NF_InitTiledBgSys(0);
     NF_InitTiledBgSys(1);
     NF_LoadTiledBg("bg/fai", "fai", 256, 256);
+    NF_LoadTiledBg("bg/oldhim", "oldhin", 256, 256);
+    NF_LoadTiledBg("bg/rhinar", "rhinar", 256, 256);
     NF_CreateTiledBg(0, 3, "fai");
+    NF_CreateTiledBg(0, 2, "oldhin");
+    NF_ScrollBg(0, 3, 128, 0);
 }
 
 void displayButtons() {
