@@ -22,6 +22,8 @@ int bg2 = 0;
 // 2 - rhinar
 char *bgMap[3] = {"fai", "oldhin", "rhinar"};
 int maxHeroesId = 2;
+int bgShakeTimer = 0;
+int isShakeBg = 0;
 
 
 void updateLife(int player, int change);
@@ -30,6 +32,9 @@ void handleUserInput();
 void initializeGraphics();
 void displayBg();
 void displayButtons();
+void shakeBg(int layer);
+
+
 
 int main(int argc, char **argv) {
     nitroFSInit(NULL);
@@ -117,6 +122,8 @@ void initializeGraphics() {
 
 
     NF_CreateSprite(1, 4, 1, 1, 32, 32);
+        NF_EnableSpriteRotScale(1, 4, 0, 0);
+
     NF_CreateSprite(1, 5, 1, 1, 32, 96);
 
     NF_CreateSprite(1, 6, 1, 1, 160, 32);
@@ -189,15 +196,35 @@ void handleUserInput() {
     // holding button for 2 seconds updateLife by 5
     if (keysHeld() & KEY_UP) {
         // flash buttons sprite 0
-        NF_SpriteSetPalColor(1, 1, 32, 31, 31, 31);
+        u8 r, g, b;
+	    s8 red, green, blue;
+        NF_SpriteRotScale(1, 0, 0, 290, 290);
+        // for (u16 n = 1; n < 256; n ++) {
+		// 		// Obten el valor actual del color en la paleta
+		// 		NF_SpriteGetPalColor(1, 1, n, &r, &g, &b);
+		// 		red = r;
+		// 		green = g;
+		// 		blue = b;
+		// 		// Modifica los valores
+		// 		red --;
+		// 		if (red < 0) red = 31;
+		// 		//green ++;
+		// 		//if (green > 31) green = 0;
+		// 		blue ++;
+		// 		if (blue > 31) blue = 0;
+		// 		// Actualiza el color en la paleta en RAM
+		// 		NF_SpriteSetPalColor(1, 1, n, red, green, blue);
+		// 	}
 
         timer++;
         if(timer == 60 * 1) {
             updateLife(1, 5);
+            isShakeBg = 3;
         }
     }
     if (keysUp() & KEY_UP) {
         // unflash buttons sprite 0
+        NF_SpriteRotScale(1, 0, 0, 256,256);
         NF_SpriteUpdatePalette(1, 1);
         if(timer < 60 * 1) {
             updateLife(1, 1);
@@ -236,6 +263,11 @@ void handleUserInput() {
         NF_CreateTiledBg(0, 2, bgMap[bg2]);
     }
 
+    if(isShakeBg != 0) {
+        shakeBg(isShakeBg);
+        
+    }
+
 
 }
 
@@ -258,4 +290,32 @@ void displayButtons() {
     // ...
     NF_SpriteOamSet(1);
 
+}
+
+// shake bg for 1 second, random amounts
+void shakeBg(int layer) {
+    int x = rand() % 10;
+    int y = rand() % 10;
+    if(rand() % 2 == 0) {
+        x = -x;
+    }
+    if(rand() % 2 == 0) {
+        y = -y;
+    }
+    if(layer == 3) {
+        x = x + 128;
+    }
+    NF_ScrollBg(0, layer, x, y);
+
+    bgShakeTimer++;
+    if(bgShakeTimer == 60 * 1) {
+        if (layer == 3) {
+            NF_ScrollBg(0, layer, 128, 0);
+        } else {
+            NF_ScrollBg(0, layer, 0, 0);
+        }
+
+        bgShakeTimer = 0;
+        isShakeBg = 0;
+    }
 }
