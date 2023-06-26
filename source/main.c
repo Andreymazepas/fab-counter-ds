@@ -4,35 +4,53 @@
 #include <nf_lib.h>
 
 #define MAX_LIFE 99
+#define INITIAL_LIFE 20
 #define MIN_LIFE 0
+#define HALF_SCREEN_WIDTH 128
+#define HALF_SCREEN_HEIGHT 96
+#define SCREEN_WIDTH 256
+#define SCREEN_HEIGHT 192
+#define SHAKE_TIME_MS 500
+#define SHAKE_AMOUNT 5
+#define LONG_PRESS_TIME_MS 1200
+#define TEMP_TIME_MS 2000
 
-int player1Life;
-int player2Life;
-int player1Temp;
-int player2Temp;
-int isTouch = 0;
-int timer = 0;
-int touchTimer = 0;
+// Global variables
+u8 player1Life = INITIAL_LIFE;
+u8 player2Life = INITIAL_LIFE;
+u8 player1Temp = 0;
+u8 player2Temp = 0;
+u8 isTouch = 0;
+u16 timer = 0;
+u16 touchTimer = 0;
+u8 bg1 = 0;
+u8 bg2 = 0;
+u8 maxHeroesId = 2;
+u16 bgShakeTimer = 0;
+u8 isShakeBg = 0;
+u8 hasTemp = 0;
+u16 tempTimer = 0;
+u8 touchedButton = 0;
+u8 heldKeySuccess = 0;
 
-int bg1 = 0;
-int bg2 = 0;
-// map id to bg
-// 0 - fai
-// 1 - oldhin
-// 2 - rhinar
-char *bgMap[3] = {"fai", "oldhin", "rhinar"};
-int maxHeroesId = 2;
-int bgShakeTimer = 0;
-int isShakeBg = 0;
+
+char *bgMap[3] = {
+    "fai",          // 0
+    "oldhin",       // 1
+    "rhinar"        // 2
+};
 
 
-void updateLife(int player, int change);
+void updateLife(u8 player, s8 change);
 void displayLifeTotals();
 void handleUserInput();
 void initializeGraphics();
 void displayBg();
 void displayButtons();
-void shakeBg(int layer);
+void shakeBg(u8 layer);
+void handleKeyHeld(u8 rotId, u8 player, s8 change);
+void handleKeyUp(u8 rotId, u8 player, s8 change);
+void tempLifeLogic();
 
 
 
@@ -42,22 +60,17 @@ int main(int argc, char **argv) {
     displayBg();
 
 
-    // Initialize life totals
-    player1Life = 20;
-    player2Life = 20;
-    
-
-
     while (1) {  // Main game loop
         displayButtons();
         displayLifeTotals();
         handleUserInput();
+        if(hasTemp == 1) {
+            tempLifeLogic();
+        }
         // ...
 
         // Other game logic
 
-        // Probably reset?
-        // ...
         swiWaitForVBlank();
         oamUpdate(&oamMain);
 		oamUpdate(&oamSub);
@@ -65,25 +78,37 @@ int main(int argc, char **argv) {
     return 0;
 }
 
-void updateLife(int player, int change) {
+void updateLife(u8 player, s8 change) {
     
-    // if(timer > 0 && timer < 60 * 3) {
-    //     timer = 0;
-    //     return;
-    // }
-    // Update the life total for the specified player
     if (player == 1) {
-        player1Life += change;
+        player1Temp += change;
+        
+    } else if (player == 2) {
+        player2Temp += change;
+    }
+
+    hasTemp = 1;
+}
+
+void tempLifeLogic() {
+    tempTimer += 16;
+    if(tempTimer > TEMP_TIME_MS) { 
+        tempTimer = 0;
+        hasTemp = 0;
+        player1Life += player1Temp;
+        player2Life += player2Temp;
+        player1Temp = 0;
+        player2Temp = 0;
+
         if (player1Life < MIN_LIFE)
             player1Life = MIN_LIFE;
         else if (player1Life > MAX_LIFE)
             player1Life = MAX_LIFE;
-    } else if (player == 2) {
-        player2Life += change;
+
         if (player2Life < MIN_LIFE)
             player2Life = MIN_LIFE;
         else if (player2Life > MAX_LIFE)
-            player2Life = MAX_LIFE;
+            player2Life = MAX_LIFE;            
     }
 }
 
@@ -125,9 +150,15 @@ void initializeGraphics() {
         NF_EnableSpriteRotScale(1, 4, 0, 0);
 
     NF_CreateSprite(1, 5, 1, 1, 32, 96);
+        NF_EnableSpriteRotScale(1, 5, 1, 0);
+
 
     NF_CreateSprite(1, 6, 1, 1, 160, 32);
+        NF_EnableSpriteRotScale(1, 6, 2, 0);
+
     NF_CreateSprite(1, 7, 1, 1, 160, 96);
+        NF_EnableSpriteRotScale(1, 7, 3, 0);
+
 
 
     NF_SpriteFrame(1, 5, 1);
@@ -172,74 +203,69 @@ void handleUserInput() {
     touchPosition touch;
 
     touchRead(&touch);
-    if(keysDown() & KEY_TOUCH && isTouch == 0) {
-        isTouch = 1;
+    if(keysHeld() & KEY_TOUCH ) {
     if (touch.px > 32 && touch.px < 96 && touch.py > 32 && touch.py < 64) {
-        updateLife(1, 1);
+        handleKeyHeld(0, 1, 1);
+        touchedButton = 1;
     } else if (touch.px > 32 && touch.px < 96 && touch.py > 96 && touch.py < 128) {
-        updateLife(1, -1);
+        handleKeyHeld(1, 1, -1);
+        touchedButton = 2;
     } else if (touch.px > 160 && touch.px < 224 && touch.py > 32 && touch.py < 64) {
-        updateLife(2, 1);
+        handleKeyHeld(2,2,1);
+        touchedButton = 3;
     } else if (touch.px > 160 && touch.px < 224 && touch.py > 96 && touch.py < 128) {
-        updateLife(2, -1);
+        handleKeyHeld(3,2,-1);
+        touchedButton = 4;
     }}
 
-    if(keysUp() & KEY_TOUCH || !(keysHeld() & KEY_TOUCH) || !(keysDown() & KEY_TOUCH)) {
-        isTouch = 0;
+    if(keysUp() & KEY_TOUCH) {
+        if (touchedButton == 1) {
+            handleKeyUp(0, 1, 1);
+        } else if (touchedButton == 2) {
+            handleKeyUp(1, 1, -1);
+        } else if (touchedButton == 3) {
+            handleKeyUp(2,2,1);
+        } else if (touchedButton == 4) {
+            handleKeyUp(3,2,-1);
+        }
     }
 
-    // if press start, reset to 20
+    // if press start, reset to initial
     if (keysDown() & KEY_START) {
-        player1Life = 20;
-        player2Life = 20;
+        player1Life = INITIAL_LIFE;
+        player2Life = INITIAL_LIFE;
     }
-    // holding button for 2 seconds updateLife by 5
-    if (keysHeld() & KEY_UP) {
-        // flash buttons sprite 0
-        u8 r, g, b;
-	    s8 red, green, blue;
-        NF_SpriteRotScale(1, 0, 0, 290, 290);
-        // for (u16 n = 1; n < 256; n ++) {
-		// 		// Obten el valor actual del color en la paleta
-		// 		NF_SpriteGetPalColor(1, 1, n, &r, &g, &b);
-		// 		red = r;
-		// 		green = g;
-		// 		blue = b;
-		// 		// Modifica los valores
-		// 		red --;
-		// 		if (red < 0) red = 31;
-		// 		//green ++;
-		// 		//if (green > 31) green = 0;
-		// 		blue ++;
-		// 		if (blue > 31) blue = 0;
-		// 		// Actualiza el color en la paleta en RAM
-		// 		NF_SpriteSetPalColor(1, 1, n, red, green, blue);
-		// 	}
 
-        timer++;
-        if(timer == 60 * 1) {
-            updateLife(1, 5);
-            isShakeBg = 3;
-        }
+    if (keysHeld() & KEY_UP) {
+        handleKeyHeld(0, 1, 1);
     }
+
     if (keysUp() & KEY_UP) {
-        // unflash buttons sprite 0
-        NF_SpriteRotScale(1, 0, 0, 256,256);
-        NF_SpriteUpdatePalette(1, 1);
-        if(timer < 60 * 1) {
-            updateLife(1, 1);
-        }
-        
-        timer = 0;
+        handleKeyUp(0, 1, 1);
     }
-    if (keysDown() & KEY_DOWN) {
-        updateLife(1, -1);
+
+    if (keysHeld() & KEY_DOWN) {
+        handleKeyHeld(1, 1, -1);
     }
-    if (keysDown() & KEY_X) {
-        updateLife(2, 1);
+
+    if (keysUp() & KEY_DOWN) {
+        handleKeyUp(1, 1, -1);
     }
-    if (keysDown() & KEY_B) {
-        updateLife(2, -1);
+
+    
+    if (keysHeld() & KEY_X) {
+        handleKeyHeld(2, 2, 1);
+    }
+    if (keysUp() & KEY_X) {
+        handleKeyUp(2, 2, 1);
+    }
+
+    if (keysHeld() & KEY_B) {
+        handleKeyHeld(3, 2, -1);
+    }
+
+    if (keysUp() & KEY_B) {
+        handleKeyUp(3, 2, -1);
     }
 
     if(keysDown() & KEY_L) {
@@ -271,6 +297,35 @@ void handleUserInput() {
 
 }
 
+void handleKeyHeld(u8 rotId, u8 player, s8 change)
+{
+    NF_SpriteRotScale(1, rotId, 0, 290, 290);
+    timer += 16;
+    if(timer >= LONG_PRESS_TIME_MS) {
+        updateLife(player, change * 5);
+        if(change == -1) {
+            if(player == 1) {
+                isShakeBg = 3;
+            } else {
+                isShakeBg = 2;
+            }
+        }
+        timer = 0;
+        heldKeySuccess = 1;
+    }
+}
+
+void handleKeyUp(u8 rotId, u8 player, s8 change)
+{
+    NF_SpriteRotScale(1, rotId, 0, 256,256);
+    if(!heldKeySuccess) {
+        updateLife(player, change);
+    }
+    
+    timer = 0;
+    heldKeySuccess = 0;
+}
+
 void displayBg() {
     // Display the background image on top/bottom screen
     // ...
@@ -282,7 +337,7 @@ void displayBg() {
     NF_LoadTiledBg("bg/rhinar", "rhinar", 256, 256);
     NF_CreateTiledBg(0, 3, "fai");
     NF_CreateTiledBg(0, 2, "oldhin");
-    NF_ScrollBg(0, 3, 128, 0);
+    NF_ScrollBg(0, 3, HALF_SCREEN_WIDTH, 0);
 }
 
 void displayButtons() {
@@ -293,22 +348,20 @@ void displayButtons() {
 }
 
 // shake bg for 1 second, random amounts
-void shakeBg(int layer) {
-    int x = rand() % 10;
-    int y = rand() % 10;
-    if(rand() % 2 == 0) {
-        x = -x;
-    }
+void shakeBg(u8 layer) {
+    int x = rand() % SHAKE_AMOUNT;
+    int y = rand() % SHAKE_AMOUNT;
+
     if(rand() % 2 == 0) {
         y = -y;
     }
     if(layer == 3) {
-        x = x + 128;
+        x = HALF_SCREEN_WIDTH - x;
     }
     NF_ScrollBg(0, layer, x, y);
 
-    bgShakeTimer++;
-    if(bgShakeTimer == 60 * 1) {
+    bgShakeTimer += 16;
+    if(bgShakeTimer >= SHAKE_TIME_MS) {
         if (layer == 3) {
             NF_ScrollBg(0, layer, 128, 0);
         } else {
