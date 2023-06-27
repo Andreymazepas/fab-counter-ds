@@ -12,8 +12,8 @@
 #define SCREEN_HEIGHT 192
 #define SHAKE_TIME_MS 500
 #define SHAKE_AMOUNT 5
-#define LONG_PRESS_TIME_MS 1200
-#define TEMP_TIME_MS 2000
+#define LONG_PRESS_TIME_MS 800
+#define TEMP_TIME_MS 1500
 
 // Global variables
 u8 player1Life = INITIAL_LIFE;
@@ -86,16 +86,7 @@ void updateLife(u8 player, s8 change) {
     } else if (player == 2) {
         player2Temp += change;
     }
-
-    hasTemp = 1;
-}
-
-void tempLifeLogic() {
-    tempTimer += 16;
-    if(tempTimer > TEMP_TIME_MS) { 
-        tempTimer = 0;
-        hasTemp = 0;
-        player1Life += player1Temp;
+    player1Life += player1Temp;
         player2Life += player2Temp;
         player1Temp = 0;
         player2Temp = 0;
@@ -108,7 +99,16 @@ void tempLifeLogic() {
         if (player2Life < MIN_LIFE)
             player2Life = MIN_LIFE;
         else if (player2Life > MAX_LIFE)
-            player2Life = MAX_LIFE;            
+            player2Life = MAX_LIFE;     
+    hasTemp = 1;
+}
+
+void tempLifeLogic() {
+    tempTimer += 16;
+    if(tempTimer > TEMP_TIME_MS) { 
+        tempTimer = 0;
+        hasTemp = 0;
+               
     }
 }
 
