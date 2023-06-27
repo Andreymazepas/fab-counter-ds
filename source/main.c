@@ -120,7 +120,7 @@ void updateLife(u8 player, s8 change)
 
     NF_ClearTextLayer(0, 0);
     NF_WriteText16(0, 0,
-                   7 + (player == 1 ? 0 : 9),
+                   7 + (player == 1 ? 0 : 16),
                    7, playerTempStr);
 
     tempTimer = 0;
