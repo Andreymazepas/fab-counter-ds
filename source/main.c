@@ -231,22 +231,22 @@ void handleUserInput()
     touchRead(&touch);
     if (keysHeld() & KEY_TOUCH)
     {
-        if (touch.px > 32 && touch.px < 96 && touch.py > 32 && touch.py < 64)
+        if (touch.px > 32 && touch.px < 96 && touch.py > 32 && touch.py < 88)
         {
             handleKeyHeld(0, 1, 1);
             touchedButton = 1;
         }
-        else if (touch.px > 32 && touch.px < 96 && touch.py > 96 && touch.py < 128)
+        else if (touch.px > 32 && touch.px < 96 && touch.py > 96 && touch.py < 148)
         {
             handleKeyHeld(1, 1, -1);
             touchedButton = 2;
         }
-        else if (touch.px > 160 && touch.px < 224 && touch.py > 32 && touch.py < 64)
+        else if (touch.px > 160 && touch.px < 224 && touch.py > 32 && touch.py < 88)
         {
             handleKeyHeld(2, 2, 1);
             touchedButton = 3;
         }
-        else if (touch.px > 160 && touch.px < 224 && touch.py > 96 && touch.py < 128)
+        else if (touch.px > 160 && touch.px < 224 && touch.py > 96 && touch.py < 148)
         {
             handleKeyHeld(3, 2, -1);
             touchedButton = 4;
