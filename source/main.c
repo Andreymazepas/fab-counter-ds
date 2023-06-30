@@ -25,7 +25,7 @@ u16 timer = 0;
 u16 touchTimer = 0;
 u8 bg1 = 0;
 u8 bg2 = 0;
-u8 maxHeroesId = 2;
+u8 maxHeroesId = 31;
 u16 bgShakeTimer = 0;
 u8 isShakeBg = 0;
 u8 hasTemp = 0;
@@ -33,11 +33,41 @@ u16 tempTimer = 0;
 u8 touchedButton = 0;
 u8 heldKeySuccess = 0;
 u8 lastPlayer = 0;
+char bgName[32];
 
-char *bgMap[3] = {
-    "fai",    // 0
-    "oldhin", // 1
-    "rhinar"  // 2
+char *bgMap[32] = {
+    "arakni",
+    "azalea",
+    "benji",
+    "boltyn",
+    "bravo",
+    "bravoelem",
+    "briar",
+    "chane",
+    "dash",
+    "datadoll",
+    "dorinthea",
+    "dromai",
+    "emperor",
+    "fai",
+    "grenis",
+    "ira",
+    "iyslander",
+    "kano",
+    "kassai",
+    "katsu",
+    "kavdaen",
+    "kayo",
+    "levia",
+    "lexi",
+    "oldhim",
+    "prism",
+    "rhinar",
+    "shiyana",
+    "uzuri",
+    "valda",
+    "viserai",
+    "yoji",
 };
 
 void updateLife(u8 player, s8 change);
@@ -150,7 +180,7 @@ void initializeGraphics()
     NF_Set2D(0, 0);
     NF_Set2D(1, 0);
     NF_SetRootFolder("NITROFS");
-
+    consoleDemoInit();
     NF_InitSpriteBuffers();
     NF_InitSpriteSys(0);
     NF_InitSpriteSys(1);
@@ -333,9 +363,28 @@ void handleUserInput()
         {
             bg1++;
         }
-
+        if (bg1 == 0 ? maxHeroesId != bg2 : bg1 - 1 != bg2)
+        {
+            // NF_UnloadTiledBg(bgMap[bg1 == 0 ? maxHeroesId : bg1 - 1]);
+        }
+        snprintf(
+            bgName,
+            sizeof(bgName),
+            "bg/%s",
+            bgMap[bg1]);
+        // NF_LoadTiledBg(bgName, bgMap[bg1], 256, 256);
         NF_CreateTiledBg(0, 3, bgMap[bg1]);
         NF_ScrollBg(0, 3, 128, 0);
+        NF_ClearTextLayer16(0, 0);
+        snprintf(
+            bgName,
+            sizeof(bgName),
+            "%c%s",
+            *bgMap[bg1] - 32, bgMap[bg1] + 1);
+        NF_WriteText16(0, 0,
+                       0,
+                       0, bgName);
+        NF_UpdateTextLayers();
     }
 
     if (keysDown() & KEY_R)
@@ -348,8 +397,27 @@ void handleUserInput()
         {
             bg2++;
         }
-
+        if (bg2 == 0 ? maxHeroesId != bg1 : bg2 - 1 != bg1)
+        {
+            // NF_UnloadTiledBg(bgMap[bg2 == 0 ? maxHeroesId : bg2 - 1]);
+        }
+        snprintf(
+            bgName,
+            sizeof(bgName),
+            "bg/%s",
+            bgMap[bg2]);
+        //  NF_LoadTiledBg(bgName, bgMap[bg2], 256, 256);
         NF_CreateTiledBg(0, 2, bgMap[bg2]);
+        NF_ClearTextLayer16(0, 0);
+        snprintf(
+            bgName,
+            sizeof(bgName),
+            "%c%s",
+            *bgMap[bg2] - 32, bgMap[bg2] + 1);
+        NF_WriteText16(0, 0,
+                       32 - strlen(bgName),
+                       0, bgName);
+        NF_UpdateTextLayers();
     }
 
     if (isShakeBg != 0)
@@ -400,13 +468,41 @@ void displayBg()
     NF_InitTiledBgBuffers();
     NF_InitTiledBgSys(0);
     NF_InitTiledBgSys(1);
-    NF_LoadTiledBg("bg/fai", "fai", 256, 256);
-    NF_LoadTiledBg("bg/oldhim", "oldhin", 256, 256);
-    NF_LoadTiledBg("bg/rhinar", "rhinar", 256, 256);
-    NF_CreateTiledBg(0, 3, "fai");
-    NF_CreateTiledBg(0, 2, "oldhin");
     NF_LoadTextFont16("fnt/font16", "down", 256, 256, 0);
     NF_CreateTextLayer16(0, 0, 0, "down");
+    for (u8 i = 0; i <= maxHeroesId; i++)
+    {
+        snprintf(
+            bgName,
+            sizeof(bgName),
+            "bg/%s",
+            bgMap[i]);
+        NF_LoadTiledBg(bgName, bgMap[i], 256, 256);
+        NF_ClearTextLayer16(0, 0);
+        // loading bar
+        sprintf(
+            bgName,
+            "[ %i / %i]",
+            i, maxHeroesId);
+        NF_WriteText16(0, 0,
+                       2,
+                       2, bgName);
+
+        sprintf(
+            bgName,
+            "Loading %s.img",
+            bgMap[i]);
+        NF_WriteText16(0, 0,
+                       3,
+                       3, bgName);
+        NF_UpdateTextLayers();
+        swiWaitForVBlank();
+    }
+    NF_ClearTextLayer16(0, 0);
+    NF_UpdateTextLayers();
+    NF_CreateTiledBg(0, 3, "arakni");
+    NF_CreateTiledBg(0, 2, "arakni");
+
     NF_ScrollBg(0, 3, HALF_SCREEN_WIDTH, 0);
 }
 
