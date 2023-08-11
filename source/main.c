@@ -25,6 +25,8 @@ u16 timer = 0;
 u16 touchTimer = 0;
 u8 bg1 = 0;
 u8 bg2 = 0;
+u8 bg1Temp = 0;
+u8 bg2Temp = 0;
 u8 maxHeroesId = 31;
 u16 bgShakeTimer = 0;
 u8 isShakeBg = 0;
@@ -33,6 +35,9 @@ u16 tempTimer = 0;
 u8 touchedButton = 0;
 u8 heldKeySuccess = 0;
 u8 lastPlayer = 0;
+u8 editMode = 0;
+u8 ccMode = 0;
+
 char bgName[32];
 
 char *bgMap[32] = {
@@ -89,13 +94,23 @@ int main(int argc, char **argv)
 
     while (1)
     { // Main game loop
-        displayButtons();
-        displayLifeTotals();
-        handleUserInput();
-        if (hasTemp == 1)
+        if (editMode)
         {
-            tempLifeLogic();
+            editModeText();
+            handleUserInputEditMode();
         }
+        else
+        {
+
+            displayButtons();
+            displayLifeTotals();
+            handleUserInput();
+            if (hasTemp == 1)
+            {
+                tempLifeLogic();
+            }
+        }
+
         // ...
 
         // Other game logic
@@ -105,6 +120,180 @@ int main(int argc, char **argv)
         oamUpdate(&oamSub);
     }
     return 0;
+}
+
+void updateGameMode(u8 newMode)
+{
+    ccMode = newMode;
+    player1Life = INITIAL_LIFE * (ccMode ? 2 : 1);
+    player2Life = INITIAL_LIFE * (ccMode ? 2 : 1);
+}
+
+void enterEditMode()
+{
+    editMode = 1;
+    // update backgrounds
+    bg1Temp = bg1;
+    bg2Temp = bg2;
+    NF_LoadTextFont16("fnt/font16", "edit", 256, 256, 0);
+    NF_CreateTextLayer16(1, 0, 0, "edit");
+    NF_ClearTextLayer16(1, 0);
+    // hide buttons
+    NF_ShowSprite(1, 4, false);
+    NF_ShowSprite(1, 5, false);
+    NF_ShowSprite(1, 6, false);
+    NF_ShowSprite(1, 7, false);
+    NF_SpriteOamSet(1);
+}
+
+void exitEditMode()
+{
+    editMode = 0;
+    // update backgrounds
+    if (bg1 != bg1Temp || bg2 != bg2Temp)
+    {
+        if (bg1 == bg2)
+        {
+            NF_UnloadTiledBg(bgMap[bg1]);
+        }
+        else
+        {
+            NF_UnloadTiledBg(bgMap[bg1]);
+            NF_UnloadTiledBg(bgMap[bg2]);
+        }
+        bg1 = bg1Temp;
+        snprintf(
+            bgName,
+            sizeof(bgName),
+            "bg/%s",
+            bgMap[bg1]);
+        NF_LoadTiledBg(bgName, bgMap[bg1], 256, 256);
+        NF_CreateTiledBg(0, 3, bgMap[bg1]);
+        NF_ScrollBg(0, 3, HALF_SCREEN_WIDTH, 0);
+
+        bg2 = bg2Temp;
+        snprintf(
+            bgName,
+            sizeof(bgName),
+            "bg/%s",
+            bgMap[bg2]);
+        NF_LoadTiledBg(bgName, bgMap[bg2], 256, 256);
+        NF_CreateTiledBg(0, 2, bgMap[bg2]);
+    }
+
+    NF_ShowSprite(1, 4, true);
+    NF_ShowSprite(1, 5, true);
+    NF_ShowSprite(1, 6, true);
+    NF_ShowSprite(1, 7, true);
+    NF_ClearTextLayer16(1, 0);
+    NF_UpdateTextLayers();
+    updateGameMode(ccMode);
+}
+
+void editModeText()
+{
+    NF_ClearTextLayer16(1, 0);
+    NF_WriteText16(1, 0,
+                   0,
+                   0, "<");
+    NF_WriteText16(1, 0,
+                   14,
+                   0, ">");
+    NF_WriteText16(1, 0,
+                   16,
+                   0, "<");
+    NF_WriteText16(1, 0,
+                   31,
+                   0, ">");
+
+    snprintf(
+        bgName,
+        sizeof(bgName),
+        "%c%s",
+        *bgMap[bg1Temp] - 32, bgMap[bg1Temp] + 1);
+
+    NF_WriteText16(1, 0,
+                   2,
+                   0, bgName);
+    snprintf(
+        bgName,
+        sizeof(bgName),
+        "%c%s",
+        *bgMap[bg2Temp] - 32, bgMap[bg2Temp] + 1);
+    NF_WriteText16(1, 0,
+                   18,
+                   0, bgName);
+
+    NF_WriteText16(1, 0,
+                   0,
+                   2, "CC_MODE=");
+    NF_WriteText16(1, 0,
+                   8,
+                   2, ccMode ? "ON" : "OFF");
+    NF_UpdateTextLayers();
+}
+
+void handleUserInputEditMode()
+{
+    scanKeys();
+
+    if (keysDown() & KEY_LEFT)
+    {
+        if (bg1Temp == 0)
+        {
+            bg1Temp = maxHeroesId;
+        }
+        else
+        {
+            bg1Temp--;
+        }
+    }
+
+    if (keysDown() & KEY_RIGHT)
+    {
+        if (bg1Temp == maxHeroesId)
+        {
+            bg1Temp = 0;
+        }
+        else
+        {
+            bg1Temp++;
+        }
+    }
+
+    if (keysDown() & KEY_Y)
+    {
+        if (bg2Temp == 0)
+        {
+            bg2Temp = maxHeroesId;
+        }
+        else
+        {
+            bg2Temp--;
+        }
+    }
+
+    if (keysDown() & KEY_A)
+    {
+        if (bg2Temp == maxHeroesId)
+        {
+            bg2Temp = 0;
+        }
+        else
+        {
+            bg2Temp++;
+        }
+    }
+
+    if (keysDown() & KEY_SELECT)
+    {
+        exitEditMode();
+    }
+
+    if (keysDown() & KEY_START)
+    {
+        updateGameMode(!ccMode);
+    }
 }
 
 void updateLife(u8 player, s8 change)
@@ -185,6 +374,7 @@ void initializeGraphics()
     NF_InitSpriteSys(0);
     NF_InitSpriteSys(1);
     NF_InitTextSys(0);
+    NF_InitTextSys(1);
 
     NF_LoadSpriteGfx("sprite/numbers", 0, 64, 64);
     NF_LoadSpritePal("sprite/numbers", 0);
@@ -310,8 +500,8 @@ void handleUserInput()
     // if press start, reset to initial
     if (keysDown() & KEY_START)
     {
-        player1Life = INITIAL_LIFE;
-        player2Life = INITIAL_LIFE;
+        player1Life = INITIAL_LIFE * (ccMode ? 2 : 1);
+        player2Life = INITIAL_LIFE * (ccMode ? 2 : 1);
     }
 
     if (keysHeld() & KEY_UP)
@@ -353,71 +543,9 @@ void handleUserInput()
         handleKeyUp(3, 2, -1);
     }
 
-    if (keysDown() & KEY_L)
+    if (keysDown() & KEY_SELECT)
     {
-        if (bg1 == maxHeroesId)
-        {
-            bg1 = 0;
-        }
-        else
-        {
-            bg1++;
-        }
-        if (bg1 == 0 ? maxHeroesId != bg2 : bg1 - 1 != bg2)
-        {
-            // NF_UnloadTiledBg(bgMap[bg1 == 0 ? maxHeroesId : bg1 - 1]);
-        }
-        snprintf(
-            bgName,
-            sizeof(bgName),
-            "bg/%s",
-            bgMap[bg1]);
-        // NF_LoadTiledBg(bgName, bgMap[bg1], 256, 256);
-        NF_CreateTiledBg(0, 3, bgMap[bg1]);
-        NF_ScrollBg(0, 3, 128, 0);
-        NF_ClearTextLayer16(0, 0);
-        snprintf(
-            bgName,
-            sizeof(bgName),
-            "%c%s",
-            *bgMap[bg1] - 32, bgMap[bg1] + 1);
-        NF_WriteText16(0, 0,
-                       0,
-                       0, bgName);
-        NF_UpdateTextLayers();
-    }
-
-    if (keysDown() & KEY_R)
-    {
-        if (bg2 == maxHeroesId)
-        {
-            bg2 = 0;
-        }
-        else
-        {
-            bg2++;
-        }
-        if (bg2 == 0 ? maxHeroesId != bg1 : bg2 - 1 != bg1)
-        {
-            // NF_UnloadTiledBg(bgMap[bg2 == 0 ? maxHeroesId : bg2 - 1]);
-        }
-        snprintf(
-            bgName,
-            sizeof(bgName),
-            "bg/%s",
-            bgMap[bg2]);
-        //  NF_LoadTiledBg(bgName, bgMap[bg2], 256, 256);
-        NF_CreateTiledBg(0, 2, bgMap[bg2]);
-        NF_ClearTextLayer16(0, 0);
-        snprintf(
-            bgName,
-            sizeof(bgName),
-            "%c%s",
-            *bgMap[bg2] - 32, bgMap[bg2] + 1);
-        NF_WriteText16(0, 0,
-                       32 - strlen(bgName),
-                       0, bgName);
-        NF_UpdateTextLayers();
+        enterEditMode();
     }
 
     if (isShakeBg != 0)
@@ -470,34 +598,7 @@ void displayBg()
     NF_InitTiledBgSys(1);
     NF_LoadTextFont16("fnt/font16", "down", 256, 256, 0);
     NF_CreateTextLayer16(0, 0, 0, "down");
-    for (u8 i = 0; i <= maxHeroesId; i++)
-    {
-        snprintf(
-            bgName,
-            sizeof(bgName),
-            "bg/%s",
-            bgMap[i]);
-        NF_LoadTiledBg(bgName, bgMap[i], 256, 256);
-        NF_ClearTextLayer16(0, 0);
-        // loading bar
-        sprintf(
-            bgName,
-            "[ %i / %i]",
-            i, maxHeroesId);
-        NF_WriteText16(0, 0,
-                       2,
-                       2, bgName);
-
-        sprintf(
-            bgName,
-            "Loading %s.img",
-            bgMap[i]);
-        NF_WriteText16(0, 0,
-                       3,
-                       3, bgName);
-        NF_UpdateTextLayers();
-        swiWaitForVBlank();
-    }
+    NF_LoadTiledBg("bg/arakni", "arakni", 256, 256);
     NF_ClearTextLayer16(0, 0);
     NF_UpdateTextLayers();
     NF_CreateTiledBg(0, 3, "arakni");
