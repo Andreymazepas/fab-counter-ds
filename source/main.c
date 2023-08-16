@@ -16,8 +16,8 @@
 #define TEMP_TIME_MS 1500
 
 // Global variables
-u8 player1Life = INITIAL_LIFE;
-u8 player2Life = INITIAL_LIFE;
+s8 player1Life = INITIAL_LIFE;
+s8 player2Life = INITIAL_LIFE;
 s8 player1Temp = 0;
 s8 player2Temp = 0;
 u8 isTouch = 0;
@@ -165,8 +165,9 @@ void exitEditMode()
         snprintf(
             bgName,
             sizeof(bgName),
-            "bg/%s",
-            bgMap[bg1]);
+            "bg/%s%s",
+            bgMap[bg1],
+            ccMode ? "" : "_young");
         NF_LoadTiledBg(bgName, bgMap[bg1], 256, 256);
         NF_CreateTiledBg(0, 3, bgMap[bg1]);
         NF_ScrollBg(0, 3, HALF_SCREEN_WIDTH, 0);
