@@ -28,6 +28,7 @@ u8 bg2 = 0;
 u8 bg1Temp = 0;
 u8 bg2Temp = 0;
 u8 maxHeroesId = 31;
+u8 maxHeroesIdCC = 21;
 u16 bgShakeTimer = 0;
 u8 isShakeBg = 0;
 u8 hasTemp = 0;
@@ -40,50 +41,39 @@ u8 ccMode = 0;
 
 char bgName[32];
 
-char *bgMap[32] = {
+char *bgMapCC[22] = {
     "default",
     "arakni",
     "azalea",
-    "benji",
     "boltyn",
     "bravo",
     "bravoelem",
     "briar",
     "chane",
     "dash",
-    "datadoll",
     "dorinthea",
     "dromai",
-    "emperor",
     "fai",
-    "grenis",
-    "ira",
     "iyslander",
     "kano",
-    "kassai",
     "katsu",
-    "kavdaen",
-    "kayo",
     "levia",
     "lexi",
     "oldhim",
     "prism",
     "rhinar",
-    "shiyana",
     "uzuri",
-    "valda",
     "viserai",
-    "yoji",
 };
 
-char *bgMapCC[32] = {
+char *bgMap[32] = {
     "default",
     "arakni",
     "azalea",
     "boltyn",
     "bravo",
-    "bravoelem",
     "briar",
+    "benji",
     "chane",
     "dash",
     "datadoll",
@@ -170,7 +160,7 @@ void updateGameMode(u8 newMode)
         if (tempArray[k] > 0)
         {
             int found = 0;
-            for (int i = 1; i < 32; i++)
+            for (int i = 1; i <= (ccMode ? maxHeroesIdCC : maxHeroesId); i++)
             {
                 if (ccMode)
                 {
@@ -285,7 +275,8 @@ void editModeText()
         bgName,
         sizeof(bgName),
         "%c%s",
-        *bgMap[bg1Temp] - 32, bgMap[bg1Temp] + 1);
+        ccMode ? *bgMapCC[bg1Temp] - 32 : *bgMap[bg1Temp] - 32,
+        ccMode ? bgMapCC[bg1Temp] + 1 : bgMap[bg1Temp] + 1);
 
     NF_WriteText16(1, 0,
                    2,
@@ -294,7 +285,8 @@ void editModeText()
         bgName,
         sizeof(bgName),
         "%c%s",
-        *bgMap[bg2Temp] - 32, bgMap[bg2Temp] + 1);
+        ccMode ? *bgMapCC[bg2Temp] - 32 : *bgMap[bg2Temp] - 32,
+        ccMode ? bgMapCC[bg2Temp] + 1 : bgMap[bg2Temp] + 1);
     NF_WriteText16(1, 0,
                    18,
                    0, bgName);
@@ -311,12 +303,13 @@ void editModeText()
 void handleUserInputEditMode()
 {
     scanKeys();
+    u8 maxId = ccMode ? maxHeroesIdCC : maxHeroesId;
 
     if (keysDown() & KEY_LEFT)
     {
         if (bg1Temp == 0)
         {
-            bg1Temp = maxHeroesId;
+            bg1Temp = maxId;
         }
         else
         {
@@ -326,7 +319,7 @@ void handleUserInputEditMode()
 
     if (keysDown() & KEY_RIGHT)
     {
-        if (bg1Temp == maxHeroesId)
+        if (bg1Temp == maxId)
         {
             bg1Temp = 0;
         }
@@ -340,7 +333,7 @@ void handleUserInputEditMode()
     {
         if (bg2Temp == 0)
         {
-            bg2Temp = maxHeroesId;
+            bg2Temp = maxId;
         }
         else
         {
@@ -350,7 +343,7 @@ void handleUserInputEditMode()
 
     if (keysDown() & KEY_A)
     {
-        if (bg2Temp == maxHeroesId)
+        if (bg2Temp == maxId)
         {
             bg2Temp = 0;
         }
