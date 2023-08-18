@@ -27,7 +27,7 @@ u8 bg1 = 0;
 u8 bg2 = 0;
 u8 bg1Temp = 0;
 u8 bg2Temp = 0;
-u8 maxHeroesId = 31;
+u8 maxHeroesId = 35;
 u8 maxHeroesIdCC = 21;
 u16 bgShakeTimer = 0;
 u8 isShakeBg = 0;
@@ -38,6 +38,7 @@ u8 heldKeySuccess = 0;
 u8 lastPlayer = 0;
 u8 editMode = 0;
 u8 ccMode = 0;
+u8 initialCCMode = 0;
 
 char bgName[32];
 
@@ -66,9 +67,10 @@ char *bgMapCC[22] = {
     "viserai",
 };
 
-char *bgMap[32] = {
+char *bgMap[36] = {
     "default",
     "arakni",
+    "arakniConfin",
     "azalea",
     "boltyn",
     "bravo",
@@ -78,6 +80,7 @@ char *bgMap[32] = {
     "dash",
     "datadoll",
     "dorinthea",
+    "dorintheaProd",
     "dromai",
     "emperor",
     "fai",
@@ -88,13 +91,15 @@ char *bgMap[32] = {
     "kassai",
     "katsu",
     "kavdaen",
-    "kayo",
+    "kano",
     "levia",
     "lexi",
     "oldhim",
     "prism",
+    "prismAdvent",
     "rhinar",
     "shiyana",
+    "taylor",
     "uzuri",
     "valda",
     "viserai",
@@ -195,6 +200,7 @@ void updateGameMode(u8 newMode)
 void enterEditMode()
 {
     editMode = 1;
+    initialCCMode = ccMode;
     // update backgrounds
     bg1Temp = bg1;
     bg2Temp = bg2;
@@ -212,39 +218,53 @@ void enterEditMode()
 void exitEditMode()
 {
     editMode = 0;
-    // update backgrounds
-    if (bg1 != bg1Temp || bg2 != bg2Temp)
+
+    if (bg1 == bg2)
     {
-        if (bg1 == bg2)
+        if (ccMode != initialCCMode)
         {
-            NF_UnloadTiledBg(bgMap[bg1]);
+            NF_UnloadTiledBg(!ccMode ? bgMapCC[bg1] : bgMap[bg1]);
         }
         else
         {
-            NF_UnloadTiledBg(bgMap[bg1]);
-            NF_UnloadTiledBg(bgMap[bg2]);
+            NF_UnloadTiledBg(ccMode ? bgMapCC[bg1] : bgMap[bg1]);
         }
-        bg1 = bg1Temp;
-        snprintf(
-            bgName,
-            sizeof(bgName),
-            "bg/%s%s",
-            bgMap[bg1],
-            ccMode || !bg1 ? "" : "_young");
-        NF_LoadTiledBg(bgName, bgMap[bg1], 256, 256);
-        NF_CreateTiledBg(0, 3, bgMap[bg1]);
-        NF_ScrollBg(0, 3, HALF_SCREEN_WIDTH, 0);
-
-        bg2 = bg2Temp;
-        snprintf(
-            bgName,
-            sizeof(bgName),
-            "bg/%s%s",
-            bgMap[bg2],
-            ccMode || !bg2 ? "" : "_young");
-        NF_LoadTiledBg(bgName, bgMap[bg2], 256, 256);
-        NF_CreateTiledBg(0, 2, bgMap[bg2]);
     }
+    else
+    {
+        if (ccMode != initialCCMode)
+        {
+            NF_UnloadTiledBg(!ccMode ? bgMapCC[bg1] : bgMap[bg1]);
+            NF_UnloadTiledBg(!ccMode ? bgMapCC[bg2] : bgMap[bg2]);
+        }
+        else
+        {
+            NF_UnloadTiledBg(ccMode ? bgMapCC[bg1] : bgMap[bg1]);
+            NF_UnloadTiledBg(ccMode ? bgMapCC[bg2] : bgMap[bg2]);
+        }
+    }
+    bg1 = bg1Temp;
+    snprintf(
+        bgName,
+        sizeof(bgName),
+        "bg/%s%s",
+        ccMode ? bgMapCC[bg1] : bgMap[bg1],
+        ccMode || !bg1 ? "" : "_young");
+    NF_LoadTiledBg(bgName,
+                   ccMode ? bgMapCC[bg1] : bgMap[bg1], 256, 256);
+    NF_CreateTiledBg(0, 3, ccMode ? bgMapCC[bg1] : bgMap[bg1]);
+    NF_ScrollBg(0, 3, HALF_SCREEN_WIDTH, 0);
+
+    bg2 = bg2Temp;
+    snprintf(
+        bgName,
+        sizeof(bgName),
+        "bg/%s%s",
+        ccMode ? bgMapCC[bg2] : bgMap[bg2],
+        ccMode || !bg2 ? "" : "_young");
+    NF_LoadTiledBg(bgName,
+                   ccMode ? bgMapCC[bg2] : bgMap[bg2], 256, 256);
+    NF_CreateTiledBg(0, 2, ccMode ? bgMapCC[bg2] : bgMap[bg2]);
 
     NF_ShowSprite(1, 4, true);
     NF_ShowSprite(1, 5, true);
@@ -667,10 +687,12 @@ void displayBg()
     NF_LoadTextFont16("fnt/font16", "down", 256, 256, 0);
     NF_CreateTextLayer16(0, 0, 0, "down");
     NF_LoadTiledBg("bg/default", "default", 256, 256);
+    NF_LoadTiledBg("bg/background", "background", 256, 256);
     NF_ClearTextLayer16(0, 0);
     NF_UpdateTextLayers();
     NF_CreateTiledBg(0, 3, "default");
     NF_CreateTiledBg(0, 2, "default");
+    NF_CreateTiledBg(1, 3, "background");
 
     NF_ScrollBg(0, 3, HALF_SCREEN_WIDTH, 0);
 }
